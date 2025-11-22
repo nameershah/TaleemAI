@@ -1,3 +1,5 @@
-altair
-pandas
 streamlit
+google-generativeai
+groq
+PyPDF2
+gTTS
