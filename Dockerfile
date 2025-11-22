@@ -1,20 +1,25 @@
-FROM python:3.13.5-slim
+# Use a slim Python image as a base
+FROM python:3.10-slim
 
+# Set the working directory
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    curl \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+# Copy the dependencies file first to leverage Docker caching
+COPY requirements.txt .
 
-COPY requirements.txt ./
-COPY src/ ./src/
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
-RUN pip3 install -r requirements.txt
+# Copy the application code
+COPY . .
 
+# Expose the correct port for Streamlit
 EXPOSE 8501
 
-HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
+# FIX: Set environment variable to disable XSRF protection for file uploads 
+# on Hugging Face Docker Spaces (prevents the 403 AxiosError)
+ENV STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION=false
 
-ENTRYPOINT ["streamlit", "run", "src/streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+# Set the entrypoint to run the Streamlit app
+# Note: --server.port 8501 and --server.address 0.0.0.0 are critical for HF Spaces
+CMD ["streamlit", "run", "app.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
