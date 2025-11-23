@@ -27,7 +27,6 @@ if GOOGLE_API_KEY:
     genai.configure(api_key=GOOGLE_API_KEY)
 
 # --- 2. HELPER FUNCTIONS ---
-
 def extract_text_from_pdf(pdf_file):
     """Extracts text from uploaded PDF for RAG context."""
     try:
@@ -52,7 +51,6 @@ def text_to_speech(text):
         return None
 
 # --- 3. LLM FUNCTIONS ---
-
 def call_llm_groq(prompt, context=""):
     """Calls Groq (Llama 3.1) for fast generation."""
     if not groq_client:
@@ -60,8 +58,9 @@ def call_llm_groq(prompt, context=""):
     
     full_prompt = prompt
     if context:
-        full_prompt = f"Context: {context[:3000]}\n\nTask: {prompt}"
-
+        # Llama has a smaller context window, keep it tight (approx 6k chars)
+        full_prompt = f"Context: {context[:6000]}\n\nTask: {prompt}"
+    
     st.toast("⚡ Routing to GROQ (Llama 3.1 Speed Mode)", icon="🟢")
     
     try:
@@ -80,8 +79,10 @@ def call_llm_gemini(prompt, context=""):
     
     full_prompt = prompt
     if context:
-        full_prompt = f"Context: {context[:3000]}\n\nQuestion: {prompt}"
-
+        # FIX: Increased limit significantly. Gemini Flash handles 1M tokens.
+        # We allow 50,000 chars here to handle long PDFs easily.
+        full_prompt = f"Context: {context[:50000]}\n\nQuestion: {prompt}"
+    
     st.toast("🧠 Routing to GEMINI (Precision Mode)", icon="🟣")
     
     try:
@@ -91,13 +92,25 @@ def call_llm_gemini(prompt, context=""):
     except Exception as e:
         return f"❌ GEMINI ERROR (CRASH AVOIDED): {e}"
 
-# --- 4. THE AGENTIC ROUTER ---
-
+# --- 4. THE AGENTIC ROUTER (IMPROVED) ---
 def agentic_router(user_input, context_text=""):
-    """Decides which model to use based on intent."""
+    """Decides which model to use based on complexity and length."""
     if not genai:
+        # Fallback if Gemini isn't configured
         return call_llm_groq(user_input, context_text), "GROQ"
 
+    # --- LOGIC 1: LENGTH TRAP ---
+    # If user prompt is long (> 200 chars), it's likely a complex question. Force Gemini.
+    if len(user_input) > 200:
+        return call_llm_gemini(user_input, context_text), "GEMINI"
+
+    # --- LOGIC 2: KEYWORD TRAP ---
+    # If specific "deep" words are used, force Gemini.
+    deep_keywords = ["summarize", "explain", "analyze", "detailed", "comprehensive", "study plan", "math", "code"]
+    if any(keyword in user_input.lower() for keyword in deep_keywords):
+        return call_llm_gemini(user_input, context_text), "GEMINI"
+
+    # --- LOGIC 3: LLM DECISION (Fallback) ---
     router_prompt = f"""
     Analyze request: "{user_input}"
     Output ONLY: 'GROQ' (creative/simple/fast) or 'GEMINI' (reasoning/academic/complex).
@@ -115,7 +128,6 @@ def agentic_router(user_input, context_text=""):
         return call_llm_groq(user_input, context_text), "GROQ"
 
 # --- 5. ADAPTIVE THEME STYLING ---
-
 st.markdown("""
 <style>
     /* Let Streamlit handle theme switching, just enhance it */
@@ -197,7 +209,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- 6. MAIN UI ---
-
 st.title("👋 Welcome to TaleemAI")
 st.markdown("### I am your Agentic Multi-Modal Tutor")
 st.caption("🎯 Architecture: Self-Healing Router | In-Memory RAG | Audio TTS")
@@ -217,11 +228,10 @@ with st.sidebar:
             pdf_context = extract_text_from_pdf(uploaded_file)
         st.success(f"✅ {uploaded_file.name}")
         st.info(f"📄 PDF Ingested ({len(pdf_context)} chars)")
-    
-    st.markdown("---")
-    
-    if st.button("🗑️ Clear Conversation"):
-        st.rerun()
+        
+        st.markdown("---")
+        if st.button("🗑️ Clear Conversation"):
+            st.rerun()
 
 # Main content
 st.markdown("### 👉 Upload a PDF to start RAG mode, or just ask a question below.")
@@ -259,6 +269,7 @@ if st.button("🚀 Run Agent"):
             st.markdown("### 🎧 Audio Ready")
             
             with st.spinner("🎤 Generating audio lecture..."):
+                # We truncate audio to 500 chars to keep it fast for the demo
                 audio_file = text_to_speech(response_text[:500])
                 if audio_file:
                     st.markdown("##### 🔊 Listen to Audio Lecture")
