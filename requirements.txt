@@ -2,5 +2,4 @@ streamlit
 groq
 google-generativeai
 PyPDF2
-pyttsx3
 gTTS
