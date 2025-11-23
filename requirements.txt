@@ -1,6 +1,5 @@
 streamlit
-groq
 google-generativeai
+groq
 PyPDF2
-pyttsx3
 gTTS
