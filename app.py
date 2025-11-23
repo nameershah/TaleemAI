@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 1. SECRETS SETUP (Fixed for Hugging Face) ---
+# --- 1. SECRETS SETUP ---
 # Try to get keys from Environment (Hugging Face Secrets) or Streamlit Secrets
 GROQ_API_KEY = os.getenv("GROQ_API_KEY") or st.secrets.get("GROQ_API_KEY")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY") or st.secrets.get("GOOGLE_API_KEY")
@@ -53,7 +53,7 @@ def text_to_speech(text):
         print(f"Audio Error: {e}")
         return None
 
-# --- 3. LLM FUNCTIONS (Improved) ---
+# --- 3. LLM FUNCTIONS (Fixed Error Reporting) ---
 def call_llm_groq(prompt, context=""):
     """Calls Groq (Llama 3.1) for fast generation."""
     if not groq_client:
@@ -75,7 +75,7 @@ def call_llm_groq(prompt, context=""):
         return f"❌ GROQ ERROR: {e}"
 
 def call_llm_gemini(prompt, context=""):
-    """Calls Gemini with Fallback Logic."""
+    """Calls Gemini with Better Error Visibility."""
     if not genai:
         return "⚠️ GEMINI NOT READY: Check API Key."
     
@@ -88,18 +88,21 @@ def call_llm_gemini(prompt, context=""):
     
     # Try multiple model names to avoid 404 errors
     models = ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-pro"]
+    last_error = "Unknown Error"
     
     for m in models:
         try:
             model = genai.GenerativeModel(m)
             response = model.generate_content(full_prompt)
             return response.text
-        except:
-            continue # Try next model if this one fails
+        except Exception as e:
+            last_error = str(e) # Capture the real error
+            continue # Try next model
             
-    return "❌ GEMINI ERROR: Could not connect. Check API Key."
+    # If we get here, show the ACTUAL error from Google
+    return f"❌ GEMINI ERROR: {last_error}"
 
-# --- 4. THE AGENTIC ROUTER (Smart Logic) ---
+# --- 4. THE AGENTIC ROUTER ---
 def agentic_router(user_input, context_text=""):
     """Decides model based on length and intent."""
     if not genai: return call_llm_groq(user_input, context_text), "GROQ"
@@ -124,7 +127,7 @@ def agentic_router(user_input, context_text=""):
         
     return call_llm_groq(user_input, context_text), "GROQ"
 
-# --- 5. RESTORED CSS & THEME ---
+# --- 5. UI STYLES ---
 st.markdown("""
 <style>
     /* RESTORED: Button styling */
@@ -174,7 +177,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 6. MAIN UI (Restored) ---
+# --- 6. MAIN UI ---
 st.title("👋 Welcome to TaleemAI")
 st.markdown("### I am your Agentic Multi-Modal Tutor")
 st.caption("🎯 Architecture: Self-Healing Router | In-Memory RAG | Audio TTS")
