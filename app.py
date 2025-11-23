@@ -239,20 +239,20 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- 6. MAIN UI (Restored) ---
-st.title("👋 Welcome to TaleemAI")
+st.title("Welcome to TaleemAI")
 st.markdown("### I am your Agentic Multi-Modal Tutor")
-st.caption("🎯 Architecture: Self-Healing Router | In-Memory RAG | Audio TTS")
+st.caption("Architecture: Self-Healing Router | In-Memory RAG | Audio TTS")
 
 # Show API Status
 with st.sidebar:
     st.header("🔌 API Status")
     if GROQ_API_KEY:
-        st.success("✅ Groq Connected")
+        st.success("Groq Connected")
     else:
         st.error("❌ Groq Not Connected")
     
     if GOOGLE_API_KEY:
-        st.success("✅ Gemini Connected")
+        st.success("Gemini Connected")
     else:
         st.error("❌ Gemini Not Connected")
     
@@ -268,11 +268,11 @@ with st.sidebar:
         st.success(f"✅ {uploaded_file.name}")
         st.info(f"📄 PDF Ingested ({len(pdf_context)} chars)")
         st.markdown("---")
-        if st.button("🗑️ Clear Conversation"):
+        if st.button("Clear Conversation"):
             st.rerun()
 
 # Main Chat Area
-st.markdown("### 👉 Upload a PDF to start RAG mode, or just ask a question below.")
+st.markdown("### 👉 Upload a PDF to start RAG mode or just ask a question below.")
 
 user_query = st.text_area(
     "Ask your AI Tutor:", 
@@ -319,4 +319,4 @@ if st.button("🚀 Run Agent"):
 
 # Footer
 st.markdown("---")
-st.caption("🚀 Powered by Groq Llama 3.1 & Google Gemini | Made with ❤️ by TEAM-TM-2300")
+st.caption("Made with ❤️ by TEAM-TM-2300")
