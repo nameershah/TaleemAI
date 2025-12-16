@@ -1,17 +1,3 @@
----
-title: TaleemAI -  Agentic Multi-Modal Tutor
-emoji: 📚
-colorFrom: indigo
-colorTo: purple
-sdk: docker
-app_port: 8501
-tags:
-- streamlit
-- genai
-- agentic-ai
-- multi-modal
----
-
 # 🎓 TaleemAI: The "Self-Healing" Agentic Tutor
 
 **Architected by Team TM-2300 for HEC Generative AI Hackathon**
